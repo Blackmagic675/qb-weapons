@@ -53,10 +53,36 @@ RegisterNetEvent("addAttachment", function(component)
     GiveWeaponComponentToPed(ped, GetHashKey(WeaponData.name), GetHashKey(component))
 end)
 
+--[[RegisterNetEvent('weapons:client:EquipTint', function(tint)
+    local player = PlayerPedId()
+    local weapon = GetSelectedPedWeapon(player)
+    SetPedWeaponTintIndex(player, weapon, tint)
+end)]]
+
 RegisterNetEvent('weapons:client:EquipTint', function(tint)
     local player = PlayerPedId()
     local weapon = GetSelectedPedWeapon(player)
     SetPedWeaponTintIndex(player, weapon, tint)
+    TriggerServerEvent("weapons:server:ApplyTint", CurrentWeaponData, tint)
+    --[[if tint == 0 then
+        itemName = "weapontint_black"
+    elseif tint == 1 then
+        itemName = "weapontint_1"
+    elseif tint == 2 then
+        itemName = "weapontint_2"
+    elseif tint == 3 then
+        itemName = "weapontint_3"
+    elseif tint == 4 then
+        itemName = "weapontint_4"
+    elseif tint == 5 then
+        itemName = "weapontint_5"
+    elseif tint == 6 then
+        itemName = "weapontint_6"
+    elseif tint == 7 then
+        itemName = "weapontint_7"
+    end
+
+    TriggerServerEvent('weapons:server:removeWeaponTintItem', itemName)]]
 end)
 
 RegisterNetEvent('weapons:client:SetCurrentWeapon', function(data, bool)
@@ -82,12 +108,6 @@ RegisterNetEvent('weapons:client:AddAmmo', function(type, amount, itemData)
             local total = GetAmmoInPedWeapon(ped, weapon)
             local _, maxAmmo = GetMaxAmmo(ped, weapon)
             if total < maxAmmo then
-                QBCore.Functions.Progressbar("taking_bullets", Lang:t('info.loading_bullets'), Config.ReloadTime, false, true, {
-                    disableMovement = false,
-                    disableCarMovement = false,
-                    disableMouse = false,
-                    disableCombat = true,
-                }, {}, {}, {}, function() -- Done
                     if QBCore.Shared.Weapons[weapon] then
                         AddAmmoToPed(ped,weapon,amount)
                         TaskReloadWeapon(ped)
@@ -96,9 +116,6 @@ RegisterNetEvent('weapons:client:AddAmmo', function(type, amount, itemData)
                         TriggerEvent('inventory:client:ItemBox', QBCore.Shared.Items[itemData.name], "remove")
                         TriggerEvent('QBCore:Notify', Lang:t('success.reloaded'), "success")
                     end
-                end, function()
-                    QBCore.Functions.Notify(Lang:t('error.canceled'), "error")
-                end)
             else
                 QBCore.Functions.Notify(Lang:t('error.max_ammo'), "error")
             end
@@ -147,6 +164,18 @@ CreateThread(function()
             end
         end
         Wait(0)
+    end
+end)
+
+CreateThread(function()
+    while true do
+        local ped = PlayerPedId()
+        if IsPedArmed(ped, 7) then
+            local weapon = GetSelectedPedWeapon(ped)
+            local ammo = GetAmmoInPedWeapon(ped, weapon)
+            TriggerServerEvent("weapons:server:UpdateWeaponAmmo", CurrentWeaponData, tonumber(ammo))
+        end
+        Wait(100)
     end
 end)
 
